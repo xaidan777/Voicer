@@ -1,0 +1,32 @@
+[project]
+name = "voicer"
+version = "0.1.0"
+description = "Автомонтаж речи: транскрибация, чистка пауз, слов-паразитов и повторов. Мост между LLM и пользователем."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "av",
+    "faster-whisper>=1.1",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+    "pyloudnorm",
+    "scipy",
+]
+
+[project.optional-dependencies]
+gpu = ["nvidia-cublas-cu12", "nvidia-cudnn-cu12>=9,<10"]
+mcp = ["mcp>=1.2"]
+
+[project.scripts]
+voicer = "voicer.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["voicer*"]
+
+[tool.setuptools.package-data]
+voicer = ["web/static/*"]

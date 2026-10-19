@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voicer</title>
+<link rel="stylesheet" href="/static/style.css?v=__V__">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo">VO<span>ICER</span></div>
+    <div id="pname" class="pname"></div>
+    <button id="btnUndo" class="tb icon" title="Отменить последнее изменение (Ctrl+Z)" disabled>↶</button>
+    <div class="spacer"></div>
+    <span id="status" class="save-status"></span>
+    <label id="cleanBox" class="tb check" title="Шумоподавление, эхо, гейт, де-эссер, левелер, громкость, лимитер. Без галочки — только монтаж. Параметры — справа в «Очистке голоса»">
+      <input type="checkbox" id="voiceClean"> Очистка голоса
+    </label>
+    <select id="fmt" class="tb" title="Формат результата">
+      <option>mp3</option><option>ogg</option><option>wav</option><option>flac</option><option>m4a</option>
+    </select>
+    <button id="btnProcess" class="tb primary">Обработать</button>
+    <div class="menu">
+      <button id="btnDl" class="tb">Скачать ▾</button>
+      <div id="dlmenu" class="popover menu-pop" hidden></div>
+    </div>
+  </header>
+
+  <div id="main">
+    <aside id="left" class="panel">
+      <div class="panel-title">
+        Проекты
+        <span class="panel-title-btns">
+          <button class="mini-btn" id="btnAdd" title="Добавить аудио или .txt">+ Файл</button>
+          <button class="mini-btn" id="btnPack"
+                  title="Несколько записей → одна дорожка (по порядку имён). Дубли вычёркиваются, остаётся поздний">+ Пак</button>
+          <button class="mini-btn" id="btnText" title="Вставить текст">+ Текст</button>
+        </span>
+      </div>
+      <input type="file" id="file" multiple hidden
+             accept=".mp3,.ogg,.oga,.opus,.wav,.flac,.m4a,.aac,.webm,.mp4,.mkv,.mov,.wma,.txt,.md">
+      <input type="file" id="filePack" multiple hidden
+             accept=".mp3,.ogg,.oga,.opus,.wav,.flac,.m4a,.aac,.webm,.mp4,.mkv,.mov,.wma">
+      <div class="panel-body">
+        <div id="jobs"></div>
+        <nav id="plist"></nav>
+      </div>
+      <div class="left-foot">
+        <span>Язык речи</span>
+        <select id="lang" class="w-select">
+          <option value="">авто</option><option value="ru">русский</option>
+          <option value="en">английский</option><option value="uk">украинский</option>
+        </select>
+      </div>
+    </aside>
+
+    <section id="center">
+      <div id="transPanel" class="panel">
+        <div class="panel-title">
+          <span>Транскрипт <span id="tstats" class="title-info"></span></span>
+          <span class="panel-title-btns">
+            <button class="mini-btn on" id="tglCut" title="Показывать вырезанные слова">вырезанное</button>
+          </span>
+        </div>
+        <div id="banner" hidden></div>
+        <div class="panel-body" id="transBody">
+          <div id="empty">
+            <div class="empty-box">
+              <div class="empty-title">Перетащите запись или текст в окно</div>
+              <div class="empty-sub">mp3 · ogg · wav · flac · m4a · txt</div>
+              <div class="btn-row center">
+                <button class="tb primary" id="btnAdd2">Добавить файл</button>
+                <button class="tb" id="btnText2">Вставить текст</button>
+              </div>
+            </div>
+          </div>
+          <div id="transcript" hidden></div>
+        </div>
+      </div>
+
+      <div class="h-split" id="split"></div>
+
+      <div id="timeline" class="panel">
+        <div class="tl-bar">
+          <button id="btnPlay" class="tb icon play" title="Воспроизвести / пауза (пробел)">▶</button>
+          <div class="seg-group" id="srcSel">
+            <button class="seg on" data-src="orig">Исходник</button>
+            <button class="seg" data-src="out">Результат</button>
+          </div>
+          <span id="tlTime" class="tl-time">00:00.0 / 00:00.0</span>
+          <span id="selInfo" hidden>
+            <span id="selText"></span>
+            <button class="mini-btn" id="selCut">Вырезать</button>
+            <button class="mini-btn" id="selKeep">Вернуть</button>
+          </span>
+          <span class="spacer"></span>
+          <div class="seg-group" id="scaleSel" title="дБ — видно тихие звуки: шум, эхо, вдохи">
+            <button class="seg" data-scale="lin">Линейная</button>
+            <button class="seg" data-scale="db">дБ</button>
+          </div>
+          <button class="mini-btn" id="zoomOut" title="Отдалить (Ctrl+колесо)">−</button>
+          <button class="mini-btn" id="zoomFit" title="Вписать всю запись">Вписать</button>
+          <button class="mini-btn" id="zoomIn" title="Приблизить (Ctrl+колесо)">+</button>
+        </div>
+        <div class="tl-body">
+          <div class="tl-labels">
+            <div class="tl-ruler-pad"></div>
+            <div class="tl-lab" id="labOrig">Исходник</div>
+            <div class="tl-lab" id="labOut">Результат<i id="stale" hidden>устарел</i></div>
+          </div>
+          <canvas id="tl"></canvas>
+        </div>
+        <audio id="aOrig" preload="metadata"></audio>
+        <audio id="aOut" preload="metadata"></audio>
+      </div>
+    </section>
+
+    <aside id="right" class="panel">
+      <div class="panel-title">Настройки</div>
+      <div class="panel-body" id="rightBody">
+        <section class="insp-section" data-sec="speech">
+          <div class="insp-sec-head"><span class="arrow">▼</span>Очистка речи</div>
+          <div class="insp-sec-body">
+            <label class="w-row w-check"><input type="checkbox" data-auto="fillers" checked>
+              <span>Заминки и мычание <small>э-э, м-м, а-а</small></span></label>
+            <label class="w-row w-check"><input type="checkbox" data-auto="soft" checked>
+              <span>Слова-паразиты <small>ну, вот, короче, как бы</small></span></label>
+            <div class="w-row sub">
+              <select id="softMode" class="w-select">
+                <option value="soft">только стоящие отдельно</option>
+                <option value="softall">везде, даже внутри фразы</option>
+              </select>
+            </div>
+            <label class="w-row w-check"><input type="checkbox" data-auto="repeats" checked>
+              <span>Повторы и оговорки</span></label>
+            <label class="w-row w-check"><input type="checkbox" data-auto="sounds">
+              <span>Вдохи и прочие звуки</span></label>
+            <div class="btn-row">
+              <button class="tb accent" id="btnAuto">Применить</button>
+              <button class="tb" id="btnReset">Вернуть всё</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="insp-section" data-sec="pauses">
+          <div class="insp-sec-head"><span class="arrow">▼</span>Паузы</div>
+          <div class="insp-sec-body">
+            <form id="fPauses" class="w-form"></form>
+            <div class="btn-row">
+              <button class="tb" id="btnPauseDefaults">По умолчанию</button>
+              <button class="tb" id="btnReanalyze" title="Заново найти паузы и заминки по звуку">Пересчитать</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="insp-section" data-sec="clean">
+          <div class="insp-sec-head"><span class="arrow">▼</span>Очистка голоса<span id="cleanState" class="sec-state"></span></div>
+          <div class="insp-sec-body">
+            <form id="fClean" class="w-form"></form>
+            <div class="btn-row"><button class="tb" id="btnPreset">Пресет</button></div>
+          </div>
+        </section>
+
+        <section class="insp-section" data-sec="output">
+          <div class="insp-sec-head"><span class="arrow">▼</span>Выход</div>
+          <div class="insp-sec-body"><form id="fOutput" class="w-form"></form></div>
+        </section>
+
+        <section class="insp-section" data-sec="claude">
+          <div class="insp-sec-head"><span class="arrow">▼</span>Claude</div>
+          <div class="insp-sec-body">
+            <div class="w-row col">
+              <textarea id="notes" rows="3" placeholder="Пожелания для Claude: что вырезать, какие паузы оставить…"></textarea>
+            </div>
+            <div class="btn-row"><button class="tb" id="btnNotes">Сохранить</button><span id="notesState" class="dim"></span></div>
+            <div class="w-row col">
+              <input id="cmd" class="w-input mono" placeholder="команда: cut 12-15 · pause 42 0.3" autocomplete="off">
+              <div id="cmdout" class="dim small"></div>
+            </div>
+            <div class="sub-title">История</div>
+            <ol id="log"></ol>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="dropOverlay" hidden><div>Отпустите, чтобы добавить</div></div>
+<div id="pop" class="popover" hidden></div>
+
+<dialog id="dlgText">
+  <form method="dialog" id="textForm">
+    <div class="dlg-title">Новый текстовый проект</div>
+    <input id="textName" class="w-input" placeholder="Название">
+    <textarea id="textBody" rows="12" placeholder="Вставьте текст — Voicer уберёт слова-паразиты и повторы"></textarea>
+    <div class="btn-row end">
+      <button value="cancel" class="tb">Отмена</button>
+      <button value="ok" class="tb primary">Создать</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" hidden></div>
+<script src="/static/app.js?v=__V__"></script>
+</body>
+</html>

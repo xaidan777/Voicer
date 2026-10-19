@@ -1,0 +1,11 @@
+.venv/
+models/
+__pycache__/
+*.egg-info/
+dist/
+projects/*
+!projects/example-3d/
+projects/example-3d/out/
+projects/example-3d/cache/
+projects/example-3d/undo.json
+projects/example-3d/peaks_out.json
